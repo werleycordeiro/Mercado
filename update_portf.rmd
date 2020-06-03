@@ -1,7 +1,6 @@
 ---
 title: "Q2 Quant FIA"
 author: "werleycordeiro@gmail.com"
-date: "31/05/2020"
 output: html_document
 ---
 
