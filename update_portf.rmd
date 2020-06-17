@@ -7,56 +7,93 @@ output: html_document
 ```{r setup, include=FALSE}
 suppressMessages(library(httr))
 suppressMessages(library(rvest))
+suppressMessages(require(xts))
 
 Q2 = c("ELET6","PETR4","USIM5","CCRO3","GGBR4","BRDT3","MRVE3","BRML3","BBDC4","BTOW3","ibov")
-
-q2f = matrix(c(0.200828,29.86,
-0.168209,	19.76,
-0.141667,	4.92,
-0.116692,	14.59,
-0.112401,	12.03,
-0.073883,	21.71,
-0.070604,	16.6,
-0.062889,	10.05,
-0.048958,	19.35,
-0.00387,	94.36,
-1.00000,85468.91),ncol=2,byrow=TRUE)
 
 for(i in 1:length(Q2)){
 	sh = GET(url = paste0("https://www.ibovx.com.br/historico-papeis-bovespa.aspx?papel=",Q2[i]))
 	data = read_html(sh) %>% html_nodes("div") %>% html_nodes("table") %>% html_nodes("tr") %>% html_nodes("td") %>% html_text()
 	if(i==1){
-		aux = as.numeric(gsub(",",".",noquote(matrix(data[13:length(data)],ncol=9,byrow=TRUE)[2,4])))
+		aux = as.numeric(gsub(",",".",noquote(matrix(data[13:length(data)],ncol=9,byrow=TRUE)[2:3,4])))
 	}else{
 		if(i<length(Q2)){
-			aux = c(aux,as.numeric(gsub(",",".",noquote(matrix(data[13:length(data)],ncol=9,byrow=TRUE)[2,4]))))
+			aux = cbind(aux,as.numeric(gsub(",",".",noquote(matrix(data[13:length(data)],ncol=9,byrow=TRUE)[2:3,4]))))
 		}else{
 		  if(i==length(Q2)){
-		    aux = c(aux,as.numeric(sub(",","",noquote((matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2,4])))*1000)
+		    aux = cbind(aux,as.numeric(sub(",","",noquote((matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2:3,4])))*1000)
 		  }
 		}
 	}
 	pb = txtProgressBar(min = (1/length(Q2)), max = length(Q2), style = 3)
 	setTxtProgressBar(pb,i)
 }
-q2f = cbind(q2f,matrix(aux,ncol=1,byrow=TRUE))
 
-port = (sum(q2f[1:(length(Q2)-1),1]*q2f[1:(length(Q2)-1),3])-sum(q2f[1:(length(Q2)-1),1]*q2f[1:(length(Q2)-1),2]))/sum(q2f[1:(length(Q2)-1),1]*q2f[1:(length(Q2)-1),2])*100
+# Create dataset
+#date = (matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2:16,1] # Até 16, pois foi o dia inicial dos pesos
+#date = as.Date(date,format="%d/%m/%Y")
+#aux = xts(aux,order.by = date)
+#ret = (as.matrix(aux[-1,])/as.matrix(aux[-nrow(aux),]))-1
+#w_q2 = c(0.200828,0.168209,0.141667,0.116692,0.112401,0.073883,0.070604,0.062889,0.048958,0.00387)
+#ret_port = ret[,1:(ncol(ret)-1)] %*% w_q2
+#ret_port
+# portfolio returns
+#acump = matrix(NA,(nrow(ret_port)-1),1)
+#acump[1] = ret_port[1]+1
+#i = 2
+#while(i<=nrow(ret_port)){
+#  acump[i] = prod(ret_port[1:i]+1)
+#  i=i+1
+#}
+# ibov returns
+#acumib = matrix(NA,(nrow(ret_port)-1),1)
+#acumib[1] = ret[1,ncol(ret)]+1
+#i = 2
+#while(i<=nrow(ret_port)){
+#  acumib[i] = prod(ret[1:i,ncol(ret)]+1)
+#  i=i+1
+#}
 
-ibov = ((q2f[length(Q2),1]*q2f[length(Q2),3])-(q2f[length(Q2),1]*q2f[length(Q2),2]))/(q2f[length(Q2),1]*q2f[length(Q2),2])*100
+#comp = cbind(acump,acumib)
+#comp = xts(comp,order.by = date[-length(date)])
+#comp = rev(comp)
+#colnames(comp)=c("Q2","Ibov")
+#write.zoo(comp,file="comp.zoo",row.names=TRUE,col.names=TRUE)
+# End dataset here
 
-colnames(q2f) = c("Peso","P. Entrada 26/05/2020 ",paste0("P. Atual ",noquote((matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2,1])))
-rownames(q2f) = Q2
+# daily tasks
 
-#q2f
+cmp = read.zoo("comp.zoo") ##Read dataset
+dte = as.Date((matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2,1],format="%d/%m/%Y") #last date
+date = (matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2:3,1]
+date = as.Date(date,format="%d/%m/%Y")
+aux = xts(aux,order.by = date)
+ret = (as.matrix(aux[-1,])/as.matrix(aux[-nrow(aux),]))-1
+w_q2 = c(0.200828,0.168209,0.141667,0.116692,0.112401,0.073883,0.070604,0.062889,0.048958,0.00387)
+ret_port = ret[,1:(ncol(ret)-1)] %*% w_q2
+# portfolio returns
+tmp = cbind(ret_port,ret[,ncol(ret)])
+tmp = xts(tmp,order.by=dte)
+comp = merge(cmp,(1+tmp)*as.numeric(cmp[nrow(cmp),]))
+comp[nrow(comp),1:2] = as.numeric(comp[nrow(comp),3:4])
+comp = comp[,1:2]
+if(as.character(as.numeric(comp[(nrow(comp)-1),])==as.numeric(comp[(nrow(comp)),]))[1]){
+  comp = comp[-nrow(comp),]
+}
+write.zoo(comp,file="comp.zoo",row.names=TRUE,col.names=TRUE)
 
-results = matrix(round(c(port,ibov),2),2,1)
-rownames(results) = c("Q2","Ibov")
-colnames(results) = c("%")
-#results
 ```
-```{r}
-q2f
 
-results
+```{r,echo=FALSE}
+pp = plot(xts((comp-1)*100),main="Retornos Acumulados",col=c("black", "blue"))
+addLegend("topleft", on=1, 
+          legend.names = c("Q2","ibov"), 
+          lty=c(1,1), lwd=c(1,1),
+          col=c("black", "blue"),
+          bg="white",
+          bty="o")
+```
+
+```{r,echo=FALSE}
+(comp[nrow(comp),]-1)*100
 ```
