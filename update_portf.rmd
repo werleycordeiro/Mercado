@@ -58,5 +58,5 @@ colnames(results) = c("%")
 ```{r}
 q2f
 
-resultsrmarkdown::render('update_portf.Rmd',output_file='update_portf.html')
+results
 ```
