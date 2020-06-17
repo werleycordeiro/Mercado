@@ -78,7 +78,7 @@ comp = merge(cmp,(1+tmp)*as.numeric(cmp[nrow(cmp),]))
 comp[nrow(comp),1:2] = as.numeric(comp[nrow(comp),3:4])
 comp = comp[,1:2]
 if(as.character(as.numeric(comp[(nrow(comp)-1),])==as.numeric(comp[(nrow(comp)),]))[1]){
-  comp = comp[-nrow(comp),]
+  comp = comp[-(nrow(comp)-1),]
 }
 write.zoo(comp,file="comp.zoo",row.names=TRUE,col.names=TRUE)
 
