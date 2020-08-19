@@ -1,0 +1,8 @@
+rmarkdown::render('update_portf.Rmd',output_file='update_portf.html')
+
+git add .
+git commit -a -m "commit"
+git push
+
+executar R programado no windows
+executar gitbash programado no windows 

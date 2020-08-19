@@ -15,12 +15,16 @@ for(i in 1:length(Q2)){
 	sh = GET(url = paste0("https://www.ibovx.com.br/historico-papeis-bovespa.aspx?papel=",Q2[i]))
 	data = read_html(sh) %>% html_nodes("div") %>% html_nodes("table") %>% html_nodes("tr") %>% html_nodes("td") %>% html_text()
 	if(i==1){
+	  #data = data[-121] # corrigir bug
 		aux = as.numeric(gsub(",",".",noquote(matrix(data[13:length(data)],ncol=9,byrow=TRUE)[2:3,4])))
+		# aux = as.numeric(gsub(",",".",noquote(matrix(data[13:length(data)],ncol=9,byrow=TRUE)[2:XX,4]))) # XX data inicial desejada
 	}else{
 		if(i<length(Q2)){
+		  #data = data[-121] # corrigir bug
 			aux = cbind(aux,as.numeric(gsub(",",".",noquote(matrix(data[13:length(data)],ncol=9,byrow=TRUE)[2:3,4]))))
 		}else{
 		  if(i==length(Q2)){
+		    data = data[-97] # corrigir bug
 		    aux = cbind(aux,as.numeric(sub(",","",noquote((matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2:3,4])))*1000)
 		  }
 		}
@@ -29,15 +33,15 @@ for(i in 1:length(Q2)){
 	setTxtProgressBar(pb,i)
 }
 
-# Create dataset
-#date = (matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2:16,1] # Até 16, pois foi o dia inicial dos pesos
+## Create dataset
+#date = (matrix(data[13:length(data)],ncol=7,byrow=TRUE))[3:59,1] # Até XX data inicial desejada, pois foi o dia inicial dos pesos "27/05/2020"
 #date = as.Date(date,format="%d/%m/%Y")
 #aux = xts(aux,order.by = date)
 #ret = (as.matrix(aux[-1,])/as.matrix(aux[-nrow(aux),]))-1
 #w_q2 = c(0.200828,0.168209,0.141667,0.116692,0.112401,0.073883,0.070604,0.062889,0.048958,0.00387)
 #ret_port = ret[,1:(ncol(ret)-1)] %*% w_q2
 #ret_port
-# portfolio returns
+## portfolio returns
 #acump = matrix(NA,(nrow(ret_port)-1),1)
 #acump[1] = ret_port[1]+1
 #i = 2
@@ -45,7 +49,7 @@ for(i in 1:length(Q2)){
 #  acump[i] = prod(ret_port[1:i]+1)
 #  i=i+1
 #}
-# ibov returns
+## ibov returns
 #acumib = matrix(NA,(nrow(ret_port)-1),1)
 #acumib[1] = ret[1,ncol(ret)]+1
 #i = 2
@@ -59,9 +63,9 @@ for(i in 1:length(Q2)){
 #comp = rev(comp)
 #colnames(comp)=c("Q2","Ibov")
 #write.zoo(comp,file="comp.zoo",row.names=TRUE,col.names=TRUE)
-# End dataset here
+## End dataset here
 
-# daily tasks
+## daily tasks
 
 cmp = read.zoo("comp.zoo") ##Read dataset
 dte = as.Date((matrix(data[13:length(data)],ncol=7,byrow=TRUE))[2,1],format="%d/%m/%Y") #last date
